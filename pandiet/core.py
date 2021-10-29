@@ -16,6 +16,13 @@ df_reduced = Reducer().reduce(df, verbose=False)
 
 import time, gc
 
+# see https://github.com/fastai/fastbook/issues/382
+from pandas.core.dtypes.common import (
+    is_float_dtype,
+    is_integer_dtype,
+    is_object_dtype,
+)
+
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
@@ -101,9 +108,9 @@ class Reducer:
                 isnull = True
             # detect kind of type
             coltype = s.dtype
-            if np.issubdtype(coltype, np.integer):
+            if is_integer_dtype(coltype):
                 conv_key = 'int' if s.min() < 0 else 'uint'
-            elif np.issubdtype(coltype, np.floating):
+            elif is_float_dtype(coltype):
                 conv_key = 'float'
                 asint = s.fillna(0).astype(np.int64)
                 result = (s - asint)
@@ -111,7 +118,7 @@ class Reducer:
                 if result < 0.01:
                     conv_key = 'int' if s.min() < 0 else 'uint'
             else:
-                if isinstance(coltype, object) and self.use_categoricals:
+                if is_object_dtype(coltype) and self.use_categoricals:
                     # check for all-strings series
                     if s.apply(lambda x: isinstance(x, str)).all():
                         if verbose: print(f'convert {colname} from {coltype} to categorical')
