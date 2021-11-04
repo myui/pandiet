@@ -11,7 +11,7 @@ def parse_requirements(filename):
 
 setuptools.setup(
     name="pandiet",
-    version="0.1.2",
+    version="0.1.3",
     author="Makoto Yui",
     author_email="myui@apache.org",
     license = "BSD-3-Clause",
