@@ -32,9 +32,9 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install setuptools wheel twine
+        pip install -r requirements.txt
     - name: Test with pytest
       run: |
-        pip install -r requirements.txt
         python setup.py test
     - name: Build a package and publish it to PyPI
       env:
