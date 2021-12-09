@@ -102,45 +102,48 @@ class Reducer:
         gc.collect()
         return pd.concat(ret_list, axis=1)
 
-    def _reduce(self, s, colname, verbose):
+    def _reduce(self, series, colname, verbose):
         try:
             isnull = False
             # skip NaNs
-            if s.isnull().any():
+            if series.isnull().any():
                 isnull = True
             # detect kind of type
-            coltype = s.dtype
+            coltype = series.dtype
             if is_integer_dtype(coltype):
-                conv_key = 'int' if s.min() < 0 else 'uint'
+                conv_key = 'int' if series.min() < 0 else 'uint'
             elif is_float_dtype(coltype):
                 conv_key = 'float'
-                asint = s.fillna(0).astype(np.int64)
-                result = (s - asint)
+                asint = series.fillna(0).astype(np.int64)
+                result = (series - asint)
                 result = np.abs(result.sum())
                 if result < 0.01:
-                    conv_key = 'int' if s.min() < 0 else 'uint'
+                    conv_key = 'int' if series.min() < 0 else 'uint'
             else:
                 if is_object_dtype(coltype) and self.use_categoricals:
-                    if len(s.unique()) / len(s) < 0.5:
+                    if len(series.unique()) / len(series) < 0.5:
                         if verbose: print(f'convert {colname} from {coltype} to categorical')
-                        return s.astype('category')
+                        return series.astype('category')
                 else:
                     if verbose: print(f'{colname} is {coltype} - Skip')
-                    return s
+                    return series
             # find right candidate
             for cand, cand_info in self._type_candidates(conv_key):
-                if s.max() <= cand_info.max and s.min() >= cand_info.min:
+                if series.max() <= cand_info.max and series.min() >= cand_info.min:
                     if verbose: print(f'convert {colname} from {coltype} to {cand}')
-                    if self.use_null_int and conv_key != 'float' and isnull:
-                        return s.astype(self.null_int[cand]())
+                    if isnull:
+                        if self.use_null_int and conv_key != 'float':
+                            return series.astype(self.null_int[cand]())
+                        else:
+                            return pd.to_numeric(series, downcast='float', errors='ignore')
                     else:
-                        return s.astype(cand)
+                        return series.astype(cand)
 
             # reaching this code is bad. Probably there are inf, or other high numbs
-            print(f"WARNING: {colname} doesn't fit the grid with \nmax: {s.max()} and \nmin: {s.min()}")
+            print(f"WARNING: {colname} doesn't fit the grid with \nmax: {series.max()} and \nmin: {series.min()}")
             print('Dropping it.')
         except Exception as ex:
             print(f'Exception for {colname}: {ex}')
             import traceback
             traceback.print_exc()
-            return s
+            return series
