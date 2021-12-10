@@ -141,7 +141,7 @@ class Reducer:
 
             # reaching this code is bad. Probably there are inf, or other high numbs
             print(f"WARNING: {colname} doesn't fit the grid with \nmax: {series.max()} and \nmin: {series.min()}")
-            print('Dropping it.')
+            return pd.to_numeric(series, errors='ignore')
         except Exception as ex:
             print(f'Exception for {colname}: {ex}')
             import traceback
