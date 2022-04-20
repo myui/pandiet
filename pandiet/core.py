@@ -82,9 +82,10 @@ class Reducer:
         self.use_null_int = use_null_int
 
     def _type_candidates(self, k):
-        for c in self.conversion_table[k]:
-            i = np.iinfo(c) if 'int' in k else np.finfo(c)
-            yield c, i
+        if k is not None:
+            for c in self.conversion_table[k]:
+                i = np.iinfo(c) if 'int' in k else np.finfo(c)
+                yield c, i
 
     @measure_time_mem
     def reduce(self, df, verbose=False):
@@ -105,6 +106,7 @@ class Reducer:
     def _reduce(self, series, colname, verbose):
         try:
             isnull = False
+            conv_key = None # avoid UnboundLocalError: referenced before assignment
             # skip NaNs
             if series.isnull().any():
                 isnull = True
