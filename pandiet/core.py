@@ -32,6 +32,7 @@ __all__ = ['Reducer']
 
 def measure_time_mem(func):
     def wrapped_reduce(self, df, *args, **kwargs):
+        gc.collect()
         # pre
         mem_usage_orig = df.memory_usage().sum() / self.memory_scale_factor
         start_time = time.time()
@@ -88,7 +89,7 @@ class Reducer:
                 yield c, i
 
     @measure_time_mem
-    def reduce(self, df, verbose=False):
+    def reduce(self, df, inplace=False, verbose=False):
         """Takes a dataframe and returns it with all data transformed to the
         smallest necessary types.
 
@@ -96,12 +97,16 @@ class Reducer:
         :param verbose: If True, outputs more information
         :return: pandas dataframe with reduced data types
         """
-        ret_list = Parallel(n_jobs=self.n_jobs, max_nbytes=None)(progress_bar(list(delayed(self._reduce)
-                                                (df[c], c, verbose) for c in df.columns)))
 
-        del df
-        gc.collect()
-        return pd.concat(ret_list, axis=1)
+        if inplace is True:
+            for col in df.columns:
+                df[col] = self._reduce(df[col], col, verbose)
+            return df
+        else:
+            ret_list = Parallel(n_jobs=self.n_jobs, max_nbytes=None)(progress_bar(list(delayed(self._reduce)
+                                                    (df[c], c, verbose) for c in df.columns)))
+            del df
+            return pd.concat(ret_list, axis=1)
 
     def _reduce(self, series, colname, verbose):
         try:
