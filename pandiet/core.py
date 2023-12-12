@@ -39,12 +39,12 @@ def measure_time_mem(func):
         # exec
         ret = func(self, df, *args, **kwargs)
         # post
+        gc.collect()
         mem_usage_new = ret.memory_usage().sum() / self.memory_scale_factor
         end_time = time.time()
         print(f'reduced df from {mem_usage_orig:.4f} MB '
               f'to {mem_usage_new:.4f} MB '
               f'in {(end_time - start_time):.2f} seconds')
-        gc.collect()
         return ret
     return wrapped_reduce
 
